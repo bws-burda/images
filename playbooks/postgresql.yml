@@ -1,0 +1,42 @@
+---
+- hosts: all
+  become: true
+
+  tasks:
+    - name: Install aptitude
+      apt:
+        name: aptitude
+        state: latest
+        update_cache: true
+
+    - name: Install required system packages
+      apt:
+        pkg:
+          - postgresql
+        state: latest
+        update_cache: true
+
+    - name: start and enable postgresql service
+      service:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: Enable remote login to postgresql
+      lineinfile:
+        path: '/etc/postgresql/14/main/postgresql.conf'
+        line: '{{ item }}'
+        owner: postgres
+        group: postgres
+        mode: '0644'
+      with_items:
+        - "listen_addresses = '*'"
+        - "port = 5432"
+      notify:
+         - Restart postgresql
+
+  handlers:
+    - name: Restart postgresql
+      service:
+        name: postgresql
+        state: restarted

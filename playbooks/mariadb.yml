@@ -1,0 +1,38 @@
+---
+- hosts: all
+  become: true
+
+  tasks:
+    - name: Install aptitude
+      apt:
+        name: aptitude
+        state: latest
+        update_cache: true
+
+    - name: Install required system packages
+      apt:
+        pkg:
+          - mariadb-server
+        state: latest
+        update_cache: true
+
+    - name: start and enable mariadb service
+      service:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: Enable remote login to mariadb
+      lineinfile:
+         path: /etc/mysql/mariadb.conf.d/50-server.cnf
+         regexp: '^bind-address'
+         line: 'bind-address = 0.0.0.0'
+         backup: yes
+      notify:
+         - Restart mariadb
+
+  handlers:
+    - name: Restart mariadb
+      service:
+        name: mariadb
+        state: restarted
